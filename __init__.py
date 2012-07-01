@@ -82,7 +82,6 @@ class ProxyManager(object):
 			if len(records):
 				record = random.sample(self.records, 1)[0]
 				self.records[record] = time.time()
-				print record
 				return {'http': record, 'https': record}
 			else:
 				time.sleep(0.2)
