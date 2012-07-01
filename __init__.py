@@ -73,7 +73,7 @@ class ProxyManager(object):
 				self.ip, self.port, self.username, self.password = record.split(':')
 				return {'http': self.ip+':'+self.port, 'https': self.ip+':'+self.port}
 			else:
-				gevent.sleep(0.2)
+				time.sleep(0.2)
 
 	@property
 	def auth(self):
