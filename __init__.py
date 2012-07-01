@@ -44,7 +44,14 @@ class Response(requests.Response):
 		if isinstance(handle, basestring):
 			handle = open(handle, 'w')
 		handle.write(self.content)
-		handle.close()		
+		handle.close()
+
+	def title(self):
+		title = self.xpath('//title/text()')
+		if len(title):
+			return title[0]
+		else:
+			return None
 
 
 requests.models.Response = Response
@@ -57,8 +64,13 @@ class ProxyManager(object):
 			self.records = [line.strip() for line in proxy.strip().split('\n')]
 		elif isinstance(proxy, collections.Iterable):
 			self.records = proxy
-
-		self.records = dict(zip(self.records, [0] * len(self.records)))
+		records = []
+		for record in self.records:
+			if '@' not in record:
+				ip, port, username, password = record.split(':')
+				record = username+':'+password+'@'+ip+':'+port
+			records.append('http://'+record+'/')
+		self.records = dict(zip(records, [0] * len(self.records)))
 
 		self.min_delay = min_delay
 		self.max_delay = max_delay
@@ -70,12 +82,8 @@ class ProxyManager(object):
 			if len(records):
 				record = random.sample(self.records, 1)[0]
 				self.records[record] = time.time()
-				self.ip, self.port, self.username, self.password = record.split(':')
-				return {'http': self.ip+':'+self.port, 'https': self.ip+':'+self.port}
+				print record
+				return {'http': record, 'https': record}
 			else:
 				time.sleep(0.2)
-
-	@property
-	def auth(self):
-		return HTTPProxyAuth(self.username, self.password)
 		
