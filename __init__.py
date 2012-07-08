@@ -10,6 +10,26 @@ import collections
 
 EXCLUDED_LINK_EXTENSIONS = ('jpg', 'gif', 'jpeg','pdf', 'doc', 'docx', 'ppt', 'txt', 'png', 'zip', 'rar', 'mp3')
 
+class UserAgent(object):
+	def __str__(self):
+		return random.choice(('Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6', 
+			'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)', 
+			'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30)', 
+			'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)','Mozilla/5.0 (X11; Arch Linux i686; rv:2.0) Gecko/20110321 Firefox/4.0','Mozilla/5.0 (Windows; U; Windows NT 6.1; ru; rv:1.9.2.3) Gecko/20100401 Firefox/4.0 (.NET CLR 3.5.30729)', 
+			'Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20110319 Firefox/4.0','Mozilla/5.0 (Windows NT 6.1; rv:1.9) Gecko/20100101 Firefox/4.0','Opera/9.20 (Windows NT 6.0; U; en)','Opera/9.00 (Windows NT 5.1; U; en)', 
+			'Opera/9.64(Windows NT 5.1; U; en) Presto/2.1.1'))
+
+requests.defaults.defaults['base_headers']['User-Agent'] = UserAgent()
+
+class Session(requests.sessions.Session):
+	def __init__(self, *args, **kwargs):
+		super(Session, self).__init__(*args, **kwargs)
+		if 'User-Agent' not in self.headers:
+			self.headers['User-Agent'] = str(UserAgent())
+
+requests.sessions.Session = Session
+
+
 class Response(requests.Response):
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
@@ -53,6 +73,8 @@ class Response(requests.Response):
 		else:
 			return None
 
+requests.models.Response = Response
+
 class ProxyManager(object):
 	def __init__(self, proxy, min_delay=10, max_delay=10):
 		if isinstance(proxy, basestring):
@@ -83,4 +105,3 @@ class ProxyManager(object):
 			else:
 				time.sleep(0.2)
 		
-requests.models.Response = Response
