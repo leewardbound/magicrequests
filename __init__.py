@@ -49,12 +49,9 @@ class Response(requests.Response):
 	def title(self):
 		title = self.xpath('//title/text()')
 		if len(title):
-			return title[0]
+			return title[0].strip()
 		else:
 			return None
-
-
-requests.models.Response = Response
 
 class ProxyManager(object):
 	def __init__(self, proxy, min_delay=10, max_delay=10):
@@ -86,3 +83,4 @@ class ProxyManager(object):
 			else:
 				time.sleep(0.2)
 		
+requests.models.Response = Response
