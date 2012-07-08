@@ -36,7 +36,7 @@ class Response(requests.Response):
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
 			self._xpath = etree.HTML(self.content)
-		return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and result.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result.strip() for result in self._xpath.xpath(xpath)]
+		return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and result.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result for result in self._xpath.xpath(xpath)]
 
 	@property
 	def domain(self):
