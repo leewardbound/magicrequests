@@ -15,8 +15,10 @@ class UserAgent(object):
 		return random.choice(('Mozilla/5.0 (Windows; U; Windows NT 5.1; en-GB; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6', 
 			'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1)', 
 			'Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 5.1; .NET CLR 1.1.4322; .NET CLR 2.0.50727; .NET CLR 3.0.04506.30)', 
-			'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)','Mozilla/5.0 (X11; Arch Linux i686; rv:2.0) Gecko/20110321 Firefox/4.0','Mozilla/5.0 (Windows; U; Windows NT 6.1; ru; rv:1.9.2.3) Gecko/20100401 Firefox/4.0 (.NET CLR 3.5.30729)', 
-			'Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20110319 Firefox/4.0','Mozilla/5.0 (Windows NT 6.1; rv:1.9) Gecko/20100101 Firefox/4.0','Opera/9.20 (Windows NT 6.0; U; en)','Opera/9.00 (Windows NT 5.1; U; en)', 
+			'Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.1.4322)',
+			'Mozilla/5.0 (X11; Arch Linux i686; rv:2.0) Gecko/20110321 Firefox/4.0','Mozilla/5.0 (Windows; U; Windows NT 6.1; ru; rv:1.9.2.3) Gecko/20100401 Firefox/4.0 (.NET CLR 3.5.30729)', 
+			'Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20110319 Firefox/4.0','Mozilla/5.0 (Windows NT 6.1; rv:1.9) Gecko/20100101 Firefox/4.0',
+			'Opera/9.20 (Windows NT 6.0; U; en)','Opera/9.00 (Windows NT 5.1; U; en)', 
 			'Opera/9.64(Windows NT 5.1; U; en) Presto/2.1.1'))
 
 requests.defaults.defaults['base_headers']['User-Agent'] = UserAgent()
@@ -34,7 +36,7 @@ class Response(requests.Response):
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
 			self._xpath = etree.HTML(self.content)
-		return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and result.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result for result in self._xpath.xpath(xpath)]
+		return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and result.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result.strip() for result in self._xpath.xpath(xpath)]
 
 	@property
 	def domain(self):
@@ -43,7 +45,7 @@ class Response(requests.Response):
 		return self._domain	
 
 	def links(self):
-		return [link.split('#')[0] for link in self.xpath('//a/@href')]
+		return [link for link in self.xpath('//a/@href')]
 
 	def filter_links(self, links):
 		return [link for link in links if not link.split('.')[-1].lower() in EXCLUDED_LINK_EXTENSIONS]
@@ -59,6 +61,18 @@ class Response(requests.Response):
 	
 	def nofollow_links(self):
 		return self.xpath('//a[@rel="nofollow"]/@href')
+
+	def link_with_url(self, url, domain=False):
+		if domain:
+			url = urlparse.urlparse(url).netloc
+		for link in self.links():
+			if link == self.url:
+				return link
+			if link.rstrip('/') == self.url:
+				return link.rstrip('/')
+			if link+'/' == self.url:
+				return link+'/'
+		return False
 
 	def save(self, handle):
 		if isinstance(handle, basestring):
