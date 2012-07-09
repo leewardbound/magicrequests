@@ -8,6 +8,11 @@ import random
 import time
 import collections
 
+try:
+	import gevent
+except:
+	gevent = False
+
 EXCLUDED_LINK_EXTENSIONS = ('jpg', 'gif', 'jpeg','pdf', 'doc', 'docx', 'ppt', 'txt', 'png', 'zip', 'rar', 'mp3')
 
 class UserAgent(object):
@@ -117,5 +122,8 @@ class ProxyManager(object):
 				self.records[record] = time.time()
 				return {'http': record, 'https': record}
 			else:
-				time.sleep(0.2)
+				if gevent:
+					gevent.sleep(0.2)
+				else:
+					time.sleep(0.2)
 		
