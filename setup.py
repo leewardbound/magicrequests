@@ -11,7 +11,7 @@ setup(
     url='https://github.com/mattseh/magicrequests',
     license='BSD',
     author='Matthew Bell',
-    author_email='null@void.com',
+    author_email='matthewrobertbell@gmail.com',
     description='Requests + Magic',
     long_description=__doc__,
     py_modules=['magicrequests'],
