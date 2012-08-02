@@ -38,10 +38,19 @@ requests.sessions.Session = Session
 
 
 class Response(requests.Response):
+	def __contains__(self, item):
+		return item.lower() in self.content.lower()
+
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
-			self._xpath = etree.HTML(self.content)
-		return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and xpath.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result for result in self._xpath.xpath(xpath)]
+			try:
+				self._xpath = etree.HTML(self.content)
+			except:
+				self._xpath = None
+		if self._xpath is not None:
+			return [urlparse.urljoin(self.url, result) if isinstance(result, basestring) and xpath.split('@')[-1] in ('href', 'src', 'action') and not result.startswith('http') else result for result in self._xpath.xpath(xpath)]
+		else:
+			return []
 
 	@property
 	def domain(self):
@@ -50,13 +59,19 @@ class Response(requests.Response):
 		return self._domain	
 
 	def links(self):
-		return [link for link in self.xpath('//a/@href')]
+		try:
+			return [link for link in self.xpath('//a/@href') if (link.startswith('http') and '://' in link) or '://' not in link]
+		except:
+			return []
 
 	def filter_links(self, links):
 		return [link for link in links if not link.split('.')[-1].lower() in EXCLUDED_LINK_EXTENSIONS]
 
 	def internal_links(self):
-		return [link for link in self.links() if urlparse.urlparse(link).netloc == self.domain]
+		try:
+			return [link for link in self.links() if urlparse.urlparse(link).netloc == self.domain]
+		except:
+			pass
 
 	def external_links(self):
 		return [link for link in self.links() if link.startswith('http') and urlparse.urlparse(link).netloc != self.domain]

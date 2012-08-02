@@ -8,7 +8,7 @@ from setuptools import setup
 setup(
     name='magicrequests',
     version='0.1.0',
-    url='https://github.com/mattseh/magicrequests',
+    url='https://github.com/mattseh/magicrequests/tarball/master',
     license='BSD',
     author='Matthew Bell',
     author_email='matthewrobertbell@gmail.com',
