@@ -141,4 +141,7 @@ class ProxyManager(object):
 					gevent.sleep(0.2)
 				else:
 					time.sleep(0.2)
+
+	def copy(self):
+		return ProxyManager(self.records.keys(), min_delay=self.min_delay, max_delay=self.max_delay)
 		
