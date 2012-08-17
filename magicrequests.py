@@ -39,12 +39,12 @@ requests.sessions.Session = Session
 
 class Response(requests.Response):
 	def __contains__(self, item):
-		return item.lower() in self.content.lower()
+		return item.lower() in self.text.lower()
 
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
 			try:
-				self._xpath = etree.HTML(self.content)
+				self._xpath = etree.HTML(self.text)
 			except:
 				self._xpath = None
 		if self._xpath is not None:
