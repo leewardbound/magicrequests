@@ -1,4 +1,5 @@
 import requests
+from requests import *
 from requests.auth import HTTPProxyAuth
 
 from lxml import etree
@@ -60,7 +61,7 @@ class Response(requests.Response):
 
 	def links(self):
 		try:
-			return [link for link in self.xpath('//a/@href') if (link.startswith('http') and '://' in link) or '://' not in link]
+			return [unicode(link) for link in self.xpath('//a/@href') if (link.startswith('http') and '://' in link) or '://' not in link]
 		except:
 			return []
 
@@ -77,10 +78,10 @@ class Response(requests.Response):
 		return [link for link in self.links() if link.startswith('http') and urlparse.urlparse(link).netloc != self.domain]
 
 	def dofollow_links(self):
-		return self.xpath('//a[@rel!="nofollow" or not(@rel)]/@href')
+		return [unicode(link) for link in self.xpath('//a[@rel!="nofollow" or not(@rel)]/@href')]
 	
 	def nofollow_links(self):
-		return self.xpath('//a[@rel="nofollow"]/@href')
+		return [unicode(link) for link in self.xpath('//a[@rel="nofollow"]/@href')]
 
 	def link_with_url(self, url, domain=False):
 		if domain:
@@ -107,7 +108,27 @@ class Response(requests.Response):
 		else:
 			return None
 
+	def form(self, xpath='//form'):
+		return Form(self, xpath)
+
 requests.models.Response = Response
+
+class Form(object):
+	def __init__(self, parent, xpath):
+		self.data = {}
+		self.parent = parent
+		self.form = parent.xpath(xpath)[0]
+		
+		for input_field in self.form.xpath('//input'):
+			self.data[input_field.get('name')] = input_field.get('value')
+		for select_field in self.form.xpath('//select'):
+			selected_option = select_field.xpath('option[@selected]')
+			if len(selected_option):
+				self.data[select_field.get('name')] = selected_option[0].get('value')
+			else:
+				self.data[select_field.get('name')] = ''
+
+		self.action = self.form.get('action')
 
 class ProxyManager(object):
 	def __init__(self, proxy, min_delay=10, max_delay=10):
