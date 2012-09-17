@@ -120,15 +120,25 @@ class Form(object):
 		self.form = parent.xpath(xpath)[0]
 		
 		for input_field in self.form.xpath('//input'):
-			self.data[input_field.get('name')] = input_field.get('value') or ''
+			if input_field.get('type') == 'radio' and input_field.get('checked') == None:
+				continue
+			if input_field.get('name'):
+				if input_field.get('name') in self.data and not input_field.get('value'):
+					continue
+				self.data[input_field.get('name')] = input_field.get('value') or ''
 		for select_field in self.form.xpath('//select'):
-			selected_option = select_field.xpath('option[@selected]')
-			if len(selected_option):
-				self.data[select_field.get('name')] = selected_option[0].get('value')
-			else:
-				self.data[select_field.get('name')] = ''
+			if select_field.get('name'):
+				selected_option = select_field.xpath('descendant::option[@selected]')
+				if len(selected_option):
+					self.data[select_field.get('name')] = selected_option[0].get('value')
+				else:
+					options = select_field.xpath('descendant::option')
+					if len(options):
+						self.data[select_field.get('name')] = options[0].get('value')
 
 		self.action = self.form.get('action')
+		if not self.action.startswith('http'):
+			self.action = urlparse.urljoin(self.parent.url, self.action)
 
 class ProxyManager(object):
 	def __init__(self, proxy, min_delay=10, max_delay=10):
