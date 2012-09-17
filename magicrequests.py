@@ -120,7 +120,7 @@ class Form(object):
 		self.form = parent.xpath(xpath)[0]
 		
 		for input_field in self.form.xpath('//input'):
-			self.data[input_field.get('name')] = input_field.get('value')
+			self.data[input_field.get('name')] = input_field.get('value') or ''
 		for select_field in self.form.xpath('//select'):
 			selected_option = select_field.xpath('option[@selected]')
 			if len(selected_option):
