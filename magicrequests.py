@@ -108,25 +108,35 @@ class Response(requests.Response):
 		else:
 			return None
 
-	def form(self, xpath='//form'):
-		return Form(self, xpath)
+	def form(self, form='//form'):
+		return Form(self, form=form)
+
+	def biggest_form(self):
+		forms = [Form(self, form) for form in self.xpath('//form')]
+		print forms
+		if len(forms):
+			return sorted(forms, key=lambda form: len(form.data), reverse=True)[0]
 
 requests.models.Response = Response
 
 class Form(object):
-	def __init__(self, parent, xpath):
+	def __init__(self, parent, form):
 		self.data = {}
 		self.parent = parent
-		self.form = parent.xpath(xpath)[0]
+		if isinstance(form, basestring):
+			self.form = parent.xpath(form)[0]
+		else:
+			self.form = form
 		
-		for input_field in self.form.xpath('//input'):
+		for input_field in self.form.xpath('descendant::input'):
 			if input_field.get('type') == 'radio' and input_field.get('checked') == None:
 				continue
 			if input_field.get('name'):
 				if input_field.get('name') in self.data and not input_field.get('value'):
 					continue
 				self.data[input_field.get('name')] = input_field.get('value') or ''
-		for select_field in self.form.xpath('//select'):
+				
+		for select_field in self.form.xpath('descendant::select'):
 			if select_field.get('name'):
 				selected_option = select_field.xpath('descendant::option[@selected]')
 				if len(selected_option):
