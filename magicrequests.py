@@ -113,7 +113,6 @@ class Response(requests.Response):
 
 	def biggest_form(self):
 		forms = [Form(self, form) for form in self.xpath('//form')]
-		print forms
 		if len(forms):
 			return sorted(forms, key=lambda form: len(form.data), reverse=True)[0]
 
@@ -134,8 +133,22 @@ class Form(object):
 			if input_field.get('name'):
 				if input_field.get('name') in self.data and not input_field.get('value'):
 					continue
-				self.data[input_field.get('name')] = input_field.get('value') or ''
-				
+				if input_field.get('type') == 'checkbox':
+					if input_field.get('checked') != None:
+						if input_field.get('name').endswith('[]'):
+							if input_field.get('name') not in self.data:
+								self.data[input_field.get('name')] = []
+							self.data[input_field.get('name')].append(input_field.get('value') or 'on')
+						else:
+							self.data[input_field.get('name')] = input_field.get('value') or 'on'
+				else:
+					if input_field.get('name').endswith('[]'):
+						if input_field.get('name') not in self.data:
+							self.data[input_field.get('name')] = []
+						self.data[input_field.get('name')].append(input_field.get('value') or '')
+					else:
+						self.data[input_field.get('name')] = input_field.get('value') or ''
+
 		for select_field in self.form.xpath('descendant::select'):
 			if select_field.get('name'):
 				selected_option = select_field.xpath('descendant::option[@selected]')
