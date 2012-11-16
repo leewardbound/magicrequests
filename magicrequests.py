@@ -27,12 +27,18 @@ class UserAgent(object):
 			'Mozilla/5.0 (Windows NT 6.1; rv:2.0) Gecko/20110319 Firefox/4.0','Mozilla/5.0 (Windows NT 6.1; rv:1.9) Gecko/20100101 Firefox/4.0',
 			'Opera/9.20 (Windows NT 6.0; U; en)','Opera/9.00 (Windows NT 5.1; U; en)', 
 			'Opera/9.64(Windows NT 5.1; U; en) Presto/2.1.1']
+	random_user_agents = useragents
 	def __str__(self):
 		return random.choice(self.useragents)
 
 	@classmethod
 	def default(cls):
 		cls.useragents = [default_user_agent()]
+
+	@classmethod
+	def not_default(cls):
+		cls.useragents = cls.random_user_agents
+
 
 requests.defaults.defaults['base_headers']['User-Agent'] = UserAgent()
 
@@ -52,7 +58,7 @@ class Response(requests.Response):
 	def xpath(self, xpath):
 		if not hasattr(self, '_xpath'):
 			try:
-				self._xpath = etree.HTML(self.text)
+				self._xpath = etree.HTML('\n'.join(self.text.split('\n')[1:] if self.text.split('\n')[0].startswith('<?') else self.text.split('\n')))
 			except:
 				self._xpath = None
 		if self._xpath is not None:
@@ -118,10 +124,12 @@ class Response(requests.Response):
 	def form(self, form='//form'):
 		return Form(self, form=form)
 
-	def biggest_form(self):
+	def biggest_form(self, **kwargs):
 		forms = [Form(self, form) for form in self.xpath('//form')]
 		if len(forms):
-			return sorted(forms, key=lambda form: len(form.data), reverse=True)[0]
+			form = sorted(forms, key=lambda form: len(form.data), reverse=True)[0]
+			form.data.update(kwargs)
+			return form
 
 
 requests.models.Response = Response
@@ -129,13 +137,16 @@ requests.models.Response = Response
 class Form(object):
 	def __init__(self, parent, form):
 		self.data = {}
+		self.types = {}
 		self.parent = parent
 		if isinstance(form, basestring):
+			print parent.xpath(form)
 			self.form = parent.xpath(form)[0]
 		else:
 			self.form = form
 		
 		for input_field in self.form.xpath('descendant::input'):
+			self.types[input_field.get('name')] = input_field.get('type') or 'text'
 			if input_field.get('type') == 'radio' and input_field.get('checked') == None:
 				continue
 			if input_field.get('name'):
@@ -158,6 +169,7 @@ class Form(object):
 						self.data[input_field.get('name')] = input_field.get('value') or ''
 
 		for select_field in self.form.xpath('descendant::select'):
+			self.types[select_field.get('name')] = 'select'
 			if select_field.get('name'):
 				selected_option = select_field.xpath('descendant::option[@selected]')
 				if len(selected_option):
@@ -165,7 +177,17 @@ class Form(object):
 				else:
 					options = select_field.xpath('descendant::option')
 					if len(options):
-						self.data[select_field.get('name')] = options[0].get('value')
+						self.data[select_field.get('name')] = random.choice(options).get('value')
+
+		for textarea in self.form.xpath('descendant::textarea'):
+			self.types[textarea.get('name')] = 'textarea'
+			self.data[textarea.get('name')] = textarea.get('value') or ''
+
+		self.img_urls = []
+		for img in self.form.xpath('descendant::img'):
+			url = img.get('src')
+			if url:
+				self.img_urls.append(urlparse.urljoin(self.parent.url, url))
 
 		self.action = self.form.get('action')
 		if not self.action.startswith('http'):
