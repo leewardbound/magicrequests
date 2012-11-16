@@ -140,7 +140,6 @@ class Form(object):
 		self.types = {}
 		self.parent = parent
 		if isinstance(form, basestring):
-			print parent.xpath(form)
 			self.form = parent.xpath(form)[0]
 		else:
 			self.form = form
